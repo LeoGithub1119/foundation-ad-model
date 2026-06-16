@@ -1,6 +1,7 @@
 site_name: DINO 工業瑕疵研究進度
 site_description: DINOv3 工業瑕疵理解研究的公開進度、實驗結果與技術決策紀錄。
 site_author: Computer Vision Research Team
+site_url: https://LeoGithub1119.github.io/foundation-ad-model/
 
 theme:
   name: material

@@ -1,0 +1,48 @@
+# Python / local tooling
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.cache/
+
+# Virtual environments
+.venv/
+.venv*/
+.venv310_dino/
+
+# MkDocs build output
+site/
+
+# Research data, model weights, and generated artifacts
+data/
+datasets/
+models/
+outputs/
+logs/
+checkpoints/
+wandb/
+mlruns/
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.bin
+*.onnx
+
+# Local HPC configuration. Keep examples in hpc/templates tracked instead.
+hpc/project.env
+hpc/project.config
+
+# Internal/raw source material should not be published accidentally.
+chat_history/
+research_ops/internal_discussions/*
+!research_ops/internal_discussions/.gitkeep
+research_ops/raw_notes/*
+!research_ops/raw_notes/.gitkeep
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

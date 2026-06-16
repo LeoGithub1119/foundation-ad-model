@@ -1,0 +1,55 @@
+site_name: DINO 工業瑕疵研究進度
+site_description: DINOv3 工業瑕疵理解研究的公開進度、實驗結果與技術決策紀錄。
+site_author: Computer Vision Research Team
+
+theme:
+  name: material
+  language: zh-TW
+  features:
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - content.code.copy
+
+nav:
+  - 首頁: index.md
+  - 研究路線:
+      - 12 週規劃: roadmap/12-week-plan.md
+  - 圖表與公式:
+      - 研究系統圖: figures/research-system.md
+      - 評估指標定義: figures/metrics.md
+  - 每週進度:
+      - 週報索引: weekly/README.md
+      - 2026-W25: weekly/2026-W25.md
+  - 實驗紀錄:
+      - 實驗總表: experiments/registry.md
+      - EXP-001 Image-Level 表格: experiments/exp-001-image-level-table.md
+  - 技術決策:
+      - 決策紀錄: decisions/decision-log.md
+  - 工作流程:
+      - HPC + uv 流程: operations/hpc-uv-workflow.md
+  - 公開討論摘要:
+      - 摘要索引: public-discussions/README.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
+extra_javascript:
+  - https://unpkg.com/mermaid@10/dist/mermaid.min.js
+  - javascripts/mathjax.js
+  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js

@@ -1,0 +1,22 @@
+# 實驗/任務參數（每個實驗可複製後自行調整）
+
+export EXP_NAME=dino_visa_a0_linear
+
+# DINOv3 model cache. MODEL_PATH 可指向本機已下載 checkpoint。
+export MODEL_ID=facebook/dinov3-vitb16-pretrain-lvd1689m
+export MODEL_PATH=$WORK_DIR/models/dinov3-vitb16-pretrain-lvd1689m
+
+# VisA dataset root and supervised split.
+export DATASET_ROOT=$WORK_DIR/datasets/VisA
+export SPLIT_CSV=split_csv/2cls_highshot.csv
+
+# Baseline settings.
+export HEAD=linear
+export FEATURE=cls
+export EPOCHS=5
+export BATCH_SIZE=16
+export NUM_WORKERS=4
+export LR=1e-3
+export WEIGHT_DECAY=1e-4
+export SEED=42
+export AMP=1

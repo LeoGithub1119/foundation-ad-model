@@ -12,10 +12,10 @@
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | EXP-000 | 已完成 | 確認 DINOv3 feature extraction 與 token shape | VisA sample image | `facebook/dinov3-vitb16-pretrain-lvd1689m` frozen encoder | shape sanity | local smoke | CLS `(1, 768)`，patch tokens `(1, 196, 768)` |
 | EXP-001 | 已完成 | Image-level supervised AD baseline A0 | VisA `2cls_highshot.csv` | DINOv3 frozen + linear head | AUROC, AUPRC, F1 | `WORK_DIR/outputs/dino_visa_a0_linear` | 第一個完整 GPU baseline 已完成：AUROC `0.9099`，AUPRC `0.6915`，best F1 `0.6176` |
-| EXP-002 | 規劃中 | 比較 MLP head 與 linear head | VisA `2cls_highshot.csv` | DINOv3 frozen + MLP head | AUROC, AUPRC, F1 | TBD | TBD |
-| EXP-003 | 規劃中 | 比較 CLS token 與 pooled patch tokens | VisA `2cls_highshot.csv` | DINOv3 frozen + selected pooling | AUROC, AUPRC, F1 | TBD | TBD |
-| EXP-004 | 規劃中 | 探索 patch-token aggregation 作為 image score | VisA `2cls_highshot.csv` | DINOv3 frozen + patch MLP / pooling | image-level AUROC, AUPRC, F1 | TBD | TBD |
-| EXP-005 | 規劃中 | Pixel-level anomaly map baseline | VisA mask annotations | DINOv3 patch tokens + aggregation | Pix-AUROC, Pix-AUPRC, Pix-F1max | TBD | 另開實驗；不混入目前 image-level classifier |
+| EXP-002 | 已完成 | Patch-token Top-K supervised AD | VisA `2cls_highshot.csv` | DINOv3 frozen + patch linear head + Top-K | AUROC, AUPRC, F1 | `WORK_DIR/outputs/dino_visa_a1_patch_topk` | AUPRC/F1max 小幅優於 CLS baseline，但部分 PCB 類別不穩 |
+| EXP-003 | 已完成 | ViT projector patch-token Top-K supervised AD | VisA `2cls_highshot.csv` | DINOv3 frozen + 6-layer ViT projector + patch head + Top-K | AUROC, AUPRC, F1 | `WORK_DIR/outputs/dino_visa_a2_patch_vit_topk_lr1e4` | LR `1e-4` 穩定後明顯優於 EXP-001/002：AUROC `0.9644`，AUPRC `0.8741`，F1max `0.8078` |
+| EXP-004 | 規劃中 | Pixel-level anomaly map baseline | VisA mask annotations | DINOv3 patch tokens + ViT projector / Top-K heatmap | Pix-AUROC, Pix-AUPRC, Pix-F1max | TBD | 下一步：把 EXP-003 的 patch scores 轉成 heatmap 並跑 pixel-level 指標 |
+| EXP-005 | 規劃中 | FoundAD-style objective adaptation | VisA normal / synthetic anomaly | DINOv3 frozen + ViT manifold projector | image-level + pixel-level metrics | TBD | 若 supervised patch objective 不足，再改用 feature projection distance objective |
 
 ## 標記完成前必須記錄
 
@@ -47,6 +47,11 @@ Tiny CPU training-loop smoke 使用 2 張 normal 與 2 張 anomaly 做 train/tes
 - `237545`：第一次提交後立即失敗，原因是 sbatch script 從 Slurm spool copy 推 `REPO_ROOT`，導致路徑錯誤。
 - `237546`：修正為使用 `SLURM_SUBMIT_DIR` 後，在 `hgpn18` 成功完成，耗時 `00:05:57`。
 - `237589`：image-level per-category evaluation 已在 `hgpn04` 完成，耗時 `00:00:37`，產出 P14-style image-level 表與 prediction dump。
+- `243976`：EXP-002 patch-token Top-K 訓練完成，耗時 `00:06:00`。
+- `243985`：EXP-002 per-category evaluation 完成，耗時 `00:00:37`。
+- `243986`：EXP-003 ViT projector，LR `1e-3`，訓練完成但不穩定，記為負結果。
+- `243991`：EXP-003 ViT projector，LR `1e-4`，穩定完成，耗時 `00:06:06`。
+- `243997`：EXP-003 stable run per-category evaluation 完成，耗時 `00:00:38`。
 
 ## EXP-001 結果摘要
 
@@ -78,3 +83,14 @@ Tiny CPU training-loop smoke 使用 2 張 normal 與 2 張 anomaly 做 train/tes
 - `image_level_by_category_test.md`：可貼入網站或報告的 Markdown 表。
 
 完整 test set evaluation 已由 Slurm job `237589` 完成。公開表格整理於 [EXP-001 Image-Level 表格](exp-001-image-level-table.md)。
+
+## EXP-002 / EXP-003 結果摘要
+
+EXP-002/003 固定 DINOv3 encoder 與 VisA split，只改 downstream anomaly component。完整比較整理於 [EXP-002/003 Patch Component Ablation](exp-002-003-patch-component-ablation.md)。
+
+| ID | Feature / Module | LR | AUROC | AUPRC | F1 @ 0.5 | F1max | 結論 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| EXP-001 | CLS + linear head | `1e-3` | 90.99 | 69.17 | 53.92 | 61.78 | 最小 image-level baseline |
+| EXP-002 | Patch head + Top-K=6 | `1e-3` | 90.82 | 70.22 | 55.36 | 62.84 | AUPRC/F1 小幅提升，但 category stability 不足 |
+| EXP-003a | 6-layer ViT projector + Top-K=6 | `1e-3` | 66.41 | 23.35 | 1.65 | 27.34 | optimizer 太激進，訓練不穩，記為負結果 |
+| EXP-003b | 6-layer ViT projector + Top-K=6 | `1e-4` | 96.44 | 87.41 | 79.91 | 80.78 | 明顯優於 EXP-001/002，成為下一階段主線 |

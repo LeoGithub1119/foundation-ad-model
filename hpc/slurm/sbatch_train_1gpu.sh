@@ -6,8 +6,9 @@
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
 #SBATCH -t 04:00:00
-#SBATCH -o dino_train_%j.out
-#SBATCH -e dino_train_%j.err
+#SBATCH --account=mst114553
+#SBATCH -o /work/foobarbaz911/dino/logs/dino_train_%j.out
+#SBATCH -e /work/foobarbaz911/dino/logs/dino_train_%j.err
 
 set -euo pipefail
 

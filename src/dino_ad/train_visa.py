@@ -18,10 +18,38 @@ from dino_ad.metrics import compute_binary_metrics
 
 
 class DINOClassifier(nn.Module):
-    def __init__(self, encoder: nn.Module, hidden_size: int, head: str, feature: str):
+    def __init__(
+        self,
+        encoder: nn.Module,
+        hidden_size: int,
+        head: str,
+        feature: str,
+        top_k: int = 6,
+        patch_projector_depth: int = 6,
+        patch_projector_heads: int = 8,
+        patch_projector_dropout: float = 0.1,
+    ):
         super().__init__()
         self.encoder = encoder
         self.feature = feature
+        self.top_k = top_k
+        self.patch_projector_depth = patch_projector_depth
+        self.patch_projector_heads = patch_projector_heads
+        self.patch_projector_dropout = patch_projector_dropout
+        if feature == "patch_vit_topk":
+            layer = nn.TransformerEncoderLayer(
+                d_model=hidden_size,
+                nhead=patch_projector_heads,
+                dim_feedforward=hidden_size * 4,
+                dropout=patch_projector_dropout,
+                activation="gelu",
+                batch_first=True,
+                norm_first=True,
+            )
+            self.patch_projector = nn.TransformerEncoder(layer, num_layers=patch_projector_depth)
+        else:
+            self.patch_projector = None
+
         if head == "linear":
             self.head = nn.Linear(hidden_size, 1)
         elif head == "mlp":
@@ -44,6 +72,15 @@ class DINOClassifier(nn.Module):
             num_register_tokens = getattr(self.encoder.config, "num_register_tokens", 0)
             patch_start = 1 + int(num_register_tokens)
             features = tokens[:, patch_start:].mean(dim=1)
+        elif self.feature in {"patch_topk", "patch_vit_topk"}:
+            num_register_tokens = getattr(self.encoder.config, "num_register_tokens", 0)
+            patch_start = 1 + int(num_register_tokens)
+            patch_features = tokens[:, patch_start:]
+            if self.patch_projector is not None:
+                patch_features = self.patch_projector(patch_features)
+            patch_logits = self.head(patch_features).squeeze(-1)
+            k = min(max(int(self.top_k), 1), int(patch_logits.shape[1]))
+            return patch_logits.topk(k, dim=1).values.mean(dim=1)
         else:
             raise ValueError(f"Unsupported feature: {self.feature}")
         return self.head(features).squeeze(-1)
@@ -56,7 +93,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--model-path", type=Path, default=Path(os.environ.get("MODEL_PATH", "models/dinov3-vitb16-pretrain-lvd1689m")))
     parser.add_argument("--output-dir", type=Path, default=Path(os.environ.get("OUT_DIR", "outputs/dino_visa_a0_linear")))
     parser.add_argument("--head", choices=["linear", "mlp"], default="linear")
-    parser.add_argument("--feature", choices=["cls", "mean_patch"], default="cls")
+    parser.add_argument("--feature", choices=["cls", "mean_patch", "patch_topk", "patch_vit_topk"], default="cls")
+    parser.add_argument("--top-k", type=int, default=int(os.environ.get("TOP_K", "6")))
+    parser.add_argument("--patch-projector-depth", type=int, default=int(os.environ.get("PATCH_PROJECTOR_DEPTH", "6")))
+    parser.add_argument("--patch-projector-heads", type=int, default=int(os.environ.get("PATCH_PROJECTOR_HEADS", "8")))
+    parser.add_argument("--patch-projector-dropout", type=float, default=float(os.environ.get("PATCH_PROJECTOR_DROPOUT", "0.1")))
     parser.add_argument("--epochs", type=int, default=5)
     parser.add_argument("--batch-size", type=int, default=16)
     parser.add_argument("--num-workers", type=int, default=4)
@@ -167,7 +208,16 @@ def main() -> None:
         collate_fn=collate_batch,
     )
 
-    model = DINOClassifier(encoder=encoder, hidden_size=hidden_size, head=args.head, feature=args.feature)
+    model = DINOClassifier(
+        encoder=encoder,
+        hidden_size=hidden_size,
+        head=args.head,
+        feature=args.feature,
+        top_k=args.top_k,
+        patch_projector_depth=args.patch_projector_depth,
+        patch_projector_heads=args.patch_projector_heads,
+        patch_projector_dropout=args.patch_projector_dropout,
+    )
     if not args.unfreeze_encoder:
         for param in model.encoder.parameters():
             param.requires_grad = False
@@ -243,6 +293,11 @@ def main() -> None:
                     "encoder_model_path": str(args.model_path),
                     "head_type": args.head,
                     "feature": args.feature,
+                    "top_k": args.top_k,
+                    "patch_projector": model.patch_projector.state_dict() if model.patch_projector is not None else None,
+                    "patch_projector_depth": args.patch_projector_depth,
+                    "patch_projector_heads": args.patch_projector_heads,
+                    "patch_projector_dropout": args.patch_projector_dropout,
                     "hidden_size": hidden_size,
                     "epoch": epoch,
                     "metrics": metrics,

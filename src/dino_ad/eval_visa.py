@@ -66,9 +66,14 @@ def grouped_metrics(predictions: list[dict[str, object]]) -> dict[str, dict[str,
     return metrics
 
 
-def write_markdown_table(path: Path, overall: dict[str, object], by_category: dict[str, dict[str, object]]) -> None:
+def write_markdown_table(
+    path: Path,
+    overall: dict[str, object],
+    by_category: dict[str, dict[str, object]],
+    title: str,
+) -> None:
     lines = [
-        "# EXP-001 Image-Level Per-Category 指標",
+        f"# {title} Image-Level Per-Category 指標",
         "",
         "表內數值為百分比。`F1max` 是在此 split 上掃過 score threshold 後得到的最佳 F1。",
         "",
@@ -133,11 +138,26 @@ def main() -> None:
     checkpoint = torch.load(args.checkpoint, map_location="cpu")
     head_type = checkpoint.get("head_type", "linear")
     feature = checkpoint.get("feature", "cls")
+    top_k = int(checkpoint.get("top_k", 6))
+    patch_projector_depth = int(checkpoint.get("patch_projector_depth", 6))
+    patch_projector_heads = int(checkpoint.get("patch_projector_heads", 8))
+    patch_projector_dropout = float(checkpoint.get("patch_projector_dropout", 0.1))
     hidden_size = int(checkpoint.get("hidden_size", 768))
 
     image_processor = AutoImageProcessor.from_pretrained(args.model_path, local_files_only=True, use_fast=True)
     encoder = AutoModel.from_pretrained(args.model_path, local_files_only=True)
-    model = DINOClassifier(encoder=encoder, hidden_size=hidden_size, head=head_type, feature=feature)
+    model = DINOClassifier(
+        encoder=encoder,
+        hidden_size=hidden_size,
+        head=head_type,
+        feature=feature,
+        top_k=top_k,
+        patch_projector_depth=patch_projector_depth,
+        patch_projector_heads=patch_projector_heads,
+        patch_projector_dropout=patch_projector_dropout,
+    )
+    if model.patch_projector is not None and checkpoint.get("patch_projector") is not None:
+        model.patch_projector.load_state_dict(checkpoint["patch_projector"])
     model.head.load_state_dict(checkpoint["head"])
     for param in model.encoder.parameters():
         param.requires_grad = False
@@ -178,7 +198,7 @@ def main() -> None:
     write_predictions(predictions_path, predictions)
     overall_path.write_text(json.dumps(overall, indent=2, ensure_ascii=False))
     category_path.write_text(json.dumps(by_category, indent=2, ensure_ascii=False))
-    write_markdown_table(markdown_path, overall, by_category)
+    write_markdown_table(markdown_path, overall, by_category, args.output_dir.name)
 
     print("[OVERALL]", json.dumps(overall, ensure_ascii=False))
     print("[DONE]", json.dumps({

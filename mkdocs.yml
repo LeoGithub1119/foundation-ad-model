@@ -22,9 +22,11 @@ nav:
   - 每週進度:
       - 週報索引: weekly/README.md
       - 2026-W25: weekly/2026-W25.md
+      - 2026-W26: weekly/2026-W26.md
   - 實驗紀錄:
       - 實驗總表: experiments/registry.md
       - EXP-001 Image-Level 表格: experiments/exp-001-image-level-table.md
+      - EXP-002/003 Patch Component Ablation: experiments/exp-002-003-patch-component-ablation.md
   - 技術決策:
       - 決策紀錄: decisions/decision-log.md
   - 工作流程:

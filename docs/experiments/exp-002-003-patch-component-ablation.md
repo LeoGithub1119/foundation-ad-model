@@ -46,19 +46,32 @@
 
 `EXP-003` adds a ViT projector before patch scoring. This is comparable to `EXP-002` as a downstream component comparison because both use the same DINOv3 encoder, VisA split, patch tokens, and Top-K aggregation. It is not a strict one-variable experiment because the projector introduces more trainable parameters and uses a different stable LR / batch size.
 
-The main conclusion is that token interaction matters. `EXP-003` improves over `EXP-001` by +5.45 AUROC, +18.24 AUPRC, and +19.00 F1max points, and improves over `EXP-002` by +17.19 AUPRC and +17.94 F1max points. This supports the component direction: keep DINOv3 fixed, use patch tokens, and add a projector/token-interaction module.
+The working hypothesis is that token interaction matters. `EXP-003` improves over `EXP-001` by +5.45 AUROC, +18.24 AUPRC, and +19.00 F1max points, and improves over `EXP-002` by +17.19 AUPRC and +17.94 F1max points. This supports the component direction: keep DINOv3 fixed, use patch tokens, and test projector/token-interaction modules more carefully.
 
 ## Research Value
 
-These three experiments give a concrete baseline chain:
+These three experiments give a concrete baseline chain, but they should be treated as a direction-finding result, not a final proof:
 
 1. `EXP-001` establishes that frozen DINOv3 already gives a usable supervised image-level AD baseline on VisA, so DINOv3 can remain the fixed encoder for the next stage.
 2. `EXP-002` tests the simplest spatial alternative: score patch tokens directly and aggregate the most suspicious patches with Top-K. The small and unstable gain shows that patch tokens alone are not sufficient.
-3. `EXP-003` adds a ViT projector before Top-K scoring. The large improvement suggests that anomaly detection benefits from a trainable token-interaction module on top of frozen DINOv3 features.
+3. `EXP-003` adds a ViT projector before Top-K scoring. The large improvement makes projector-based patch scoring the strongest current candidate component, but does not by itself prove that ViT structure is the reason.
 
-The defensible research claim at this stage is: under the same DINOv3 / VisA image-level supervised setup, the main value is not just switching from CLS to patch tokens, but adding an anomaly-specific projector that can re-organize patch-token evidence before image-level scoring.
+The defensible research claim at this stage is: under the same DINOv3 / VisA image-level supervised setup, simply switching from CLS to raw patch-token Top-K is not enough; a trainable patch-token projector is a promising direction and should become the next controlled study.
 
 This is not yet a final paper-level claim. The current evidence is image-level, single-split, and supervised. The next required step is pixel-level heatmap evaluation, because `EXP-003` naturally produces patch scores that can be upsampled into localization maps.
+
+## What This Does Not Prove Yet
+
+This comparison does not prove that "ViT is uniquely better" or that "adding any projector is sufficient." `EXP-003` changes multiple factors at once: model capacity, token interaction, stable learning rate, and batch size. Therefore, the result is useful for choosing the next direction, but not enough for a final ablation table.
+
+The next controlled comparisons should separate these factors:
+
+| Control | Purpose |
+| --- | --- |
+| Patch MLP projector + Top-K | Test whether extra capacity without token mixing explains the gain |
+| ViT projector depth / head sweep | Test whether token interaction strength matters |
+| Top-K sweep on EXP-002 and EXP-003 | Test whether the gain comes from aggregation policy |
+| Pixel-level heatmap evaluation | Test whether the image-level gain corresponds to actual localization |
 
 ## Output Artifacts
 
@@ -69,4 +82,4 @@ This is not yet a final paper-level claim. The current evidence is image-level, 
 
 ## Next Step
 
-Use `EXP-003` as the current image-level component baseline. The next experiment should convert patch logits into heatmaps and evaluate VisA pixel-level metrics against masks. This is the bridge from image-level supervised AD toward localization and FoundAD-style anomaly scoring.
+Use `EXP-003` as the current image-level component baseline, but do not present it as a final proof. The next experiment should convert patch logits into heatmaps and evaluate VisA pixel-level metrics against masks, while also preparing parameter-matched controls such as patch MLP projector + Top-K. This is the bridge from image-level supervised AD toward localization and FoundAD-style anomaly scoring.

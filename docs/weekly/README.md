@@ -6,7 +6,7 @@
 
 | 週次 | 日期 | 重點 | 狀態 |
 | --- | --- | --- | --- |
-| [2026-W26](2026-W26.md) | 2026-06-22 至 2026-06-28 | 固定 DINOv3 encoder，完成 patch-token / ViT projector component ablation | 已完成 EXP-002/003 |
+| [2026-W26](2026-W26.md) | 2026-06-22 至 2026-06-28 | 固定 DINOv3 encoder，完成 patch-token / ViT projector component comparison | 已完成 EXP-002/003 |
 | [2026-W25](2026-W25.md) | 2026-06-15 至 2026-06-21 | 建立研究網站與第一個 DINOv3 supervised baseline | 已完成第一個 GPU baseline |
 
 ## 固定格式

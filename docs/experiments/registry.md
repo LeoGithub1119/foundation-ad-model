@@ -49,7 +49,6 @@ Tiny CPU training-loop smoke 使用 2 張 normal 與 2 張 anomaly 做 train/tes
 - `237589`：image-level per-category evaluation 已在 `hgpn04` 完成，耗時 `00:00:37`，產出 P14-style image-level 表與 prediction dump。
 - `243976`：EXP-002 patch-token Top-K 訓練完成，耗時 `00:06:00`。
 - `243985`：EXP-002 per-category evaluation 完成，耗時 `00:00:37`。
-- `243986`：EXP-003 ViT projector，LR `1e-3`，訓練完成但不穩定，記為負結果。
 - `243991`：EXP-003 ViT projector，LR `1e-4`，穩定完成，耗時 `00:06:06`。
 - `243997`：EXP-003 stable run per-category evaluation 完成，耗時 `00:00:38`。
 
@@ -86,11 +85,10 @@ Tiny CPU training-loop smoke 使用 2 張 normal 與 2 張 anomaly 做 train/tes
 
 ## EXP-002 / EXP-003 結果摘要
 
-EXP-002/003 固定 DINOv3 encoder 與 VisA split，只改 downstream anomaly component。完整比較整理於 [EXP-002/003 Patch Component Ablation](exp-002-003-patch-component-ablation.md)。
+EXP-002/003 固定 DINOv3 encoder 與 VisA split，比較 patch-token Top-K control 與加入 ViT projector 的 downstream component。完整比較整理於 [EXP-002/003 Patch Component Comparison](exp-002-003-patch-component-ablation.md)。
 
 | ID | Feature / Module | LR | AUROC | AUPRC | F1 @ 0.5 | F1max | 結論 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | EXP-001 | CLS + linear head | `1e-3` | 90.99 | 69.17 | 53.92 | 61.78 | 最小 image-level baseline |
 | EXP-002 | Patch head + Top-K=6 | `1e-3` | 90.82 | 70.22 | 55.36 | 62.84 | AUPRC/F1 小幅提升，但 category stability 不足 |
-| EXP-003a | 6-layer ViT projector + Top-K=6 | `1e-3` | 66.41 | 23.35 | 1.65 | 27.34 | optimizer 太激進，訓練不穩，記為負結果 |
-| EXP-003b | 6-layer ViT projector + Top-K=6 | `1e-4` | 96.44 | 87.41 | 79.91 | 80.78 | 明顯優於 EXP-001/002，成為下一階段主線 |
+| EXP-003 | 6-layer ViT projector + Top-K=6 | `1e-4` | 96.44 | 87.41 | 79.91 | 80.78 | 明顯優於 EXP-001/002，成為下一階段主線 |

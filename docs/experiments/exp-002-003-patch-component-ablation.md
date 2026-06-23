@@ -82,4 +82,4 @@ The next controlled comparisons should separate these factors:
 
 ## Next Step
 
-Use `EXP-003` as the current image-level component baseline, but do not present it as a final proof. The next experiment should convert patch logits into heatmaps and evaluate VisA pixel-level metrics against masks, while also preparing parameter-matched controls such as patch MLP projector + Top-K. This is the bridge from image-level supervised AD toward localization and FoundAD-style anomaly scoring.
+Use `EXP-003` as the current image-level component baseline, but do not present it as a final proof. The follow-up module controls are summarized in [EXP-004+ Projector Module Study](exp-004-projector-module-study.md). The next stage should move from patch-grid proxy metrics toward full-resolution heatmaps and memory-bank decoding.

@@ -37,7 +37,7 @@ flowchart LR
 | --- | --- | --- |
 | 文件網站 | MkDocs strict build 已通過，支援 Mermaid 圖與 LaTeX 公式 | GitHub Pages 自動部署 |
 | 實驗環境 | DINO HPC scaffold 與 repo 專屬 venv 已可用 | 固定可重跑的 GPU 實驗流程 |
-| Component comparison | `EXP-003` 已完成：ViT projector + Top-K 明顯優於 CLS baseline | pixel-level heatmap / localization |
+| Component comparison | `EXP-004/006` 已完成：MLP/Transformer projector 與 Top-K 初步比較 | memory-bank decoder / full-res pixel metric |
 | 協作紀錄 | 內部討論與公開摘要分離 | 持續更新公開安全摘要 |
 
 ## 重點頁面
@@ -47,6 +47,7 @@ flowchart LR
 - [實驗總表](experiments/registry.md)
 - [EXP-001 Image-Level 表格](experiments/exp-001-image-level-table.md)
 - [EXP-002/003 Patch Component Comparison](experiments/exp-002-003-patch-component-ablation.md)
+- [EXP-004+ Projector Module Study](experiments/exp-004-projector-module-study.md)
 - [技術決策紀錄](decisions/decision-log.md)
 - [研究系統圖](figures/research-system.md)
 - [評估指標定義](figures/metrics.md)

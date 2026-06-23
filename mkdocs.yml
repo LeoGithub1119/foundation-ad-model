@@ -27,6 +27,7 @@ nav:
       - 實驗總表: experiments/registry.md
       - EXP-001 Image-Level 表格: experiments/exp-001-image-level-table.md
       - EXP-002/003 Patch Component Comparison: experiments/exp-002-003-patch-component-ablation.md
+      - EXP-004+ Projector Module Study: experiments/exp-004-projector-module-study.md
   - 技術決策:
       - 決策紀錄: decisions/decision-log.md
   - 工作流程:

@@ -17,6 +17,70 @@ from dino_ad.data import VisaImageDataset, load_visa_split, summarize_samples
 from dino_ad.metrics import compute_binary_metrics
 
 
+class TokenMLPBlock(nn.Module):
+    def __init__(self, hidden_size: int, dropout: float):
+        super().__init__()
+        self.norm = nn.LayerNorm(hidden_size)
+        self.net = nn.Sequential(
+            nn.Linear(hidden_size, hidden_size * 4),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_size * 4, hidden_size),
+            nn.Dropout(dropout),
+        )
+
+    def forward(self, patch_features: torch.Tensor) -> torch.Tensor:
+        return patch_features + self.net(self.norm(patch_features))
+
+
+class TokenMLPProjector(nn.Module):
+    def __init__(self, hidden_size: int, depth: int, dropout: float):
+        super().__init__()
+        self.blocks = nn.ModuleList(TokenMLPBlock(hidden_size, dropout) for _ in range(depth))
+        self.norm = nn.LayerNorm(hidden_size)
+
+    def forward(self, patch_features: torch.Tensor) -> torch.Tensor:
+        for block in self.blocks:
+            patch_features = block(patch_features)
+        return self.norm(patch_features)
+
+
+class PatchConvBlock(nn.Module):
+    def __init__(self, hidden_size: int, dropout: float):
+        super().__init__()
+        self.norm = nn.LayerNorm(hidden_size)
+        self.net = nn.Sequential(
+            nn.Conv2d(hidden_size, hidden_size, kernel_size=1),
+            nn.GELU(),
+            nn.Dropout2d(dropout),
+            nn.Conv2d(hidden_size, hidden_size, kernel_size=3, padding=1),
+            nn.GELU(),
+            nn.Dropout2d(dropout),
+        )
+
+    def forward(self, patch_features: torch.Tensor) -> torch.Tensor:
+        batch_size, num_patches, hidden_size = patch_features.shape
+        grid_size = int(num_patches**0.5)
+        if grid_size * grid_size != num_patches:
+            raise ValueError(f"PatchConvProjector requires a square patch grid, got {num_patches} patches")
+        residual = patch_features
+        features = self.norm(patch_features).transpose(1, 2).reshape(batch_size, hidden_size, grid_size, grid_size)
+        features = self.net(features).reshape(batch_size, hidden_size, num_patches).transpose(1, 2)
+        return residual + features
+
+
+class PatchConvProjector(nn.Module):
+    def __init__(self, hidden_size: int, depth: int, dropout: float):
+        super().__init__()
+        self.blocks = nn.ModuleList(PatchConvBlock(hidden_size, dropout) for _ in range(depth))
+        self.norm = nn.LayerNorm(hidden_size)
+
+    def forward(self, patch_features: torch.Tensor) -> torch.Tensor:
+        for block in self.blocks:
+            patch_features = block(patch_features)
+        return self.norm(patch_features)
+
+
 class DINOClassifier(nn.Module):
     def __init__(
         self,
@@ -36,7 +100,19 @@ class DINOClassifier(nn.Module):
         self.patch_projector_depth = patch_projector_depth
         self.patch_projector_heads = patch_projector_heads
         self.patch_projector_dropout = patch_projector_dropout
-        if feature == "patch_vit_topk":
+        if feature == "patch_mlp_topk":
+            self.patch_projector = TokenMLPProjector(
+                hidden_size=hidden_size,
+                depth=patch_projector_depth,
+                dropout=patch_projector_dropout,
+            )
+        elif feature == "patch_conv_topk":
+            self.patch_projector = PatchConvProjector(
+                hidden_size=hidden_size,
+                depth=patch_projector_depth,
+                dropout=patch_projector_dropout,
+            )
+        elif feature == "patch_vit_topk":
             layer = nn.TransformerEncoderLayer(
                 d_model=hidden_size,
                 nhead=patch_projector_heads,
@@ -62,6 +138,21 @@ class DINOClassifier(nn.Module):
         else:
             raise ValueError(f"Unsupported head: {head}")
 
+    def extract_patch_features(self, tokens: torch.Tensor) -> torch.Tensor:
+        num_register_tokens = getattr(self.encoder.config, "num_register_tokens", 0)
+        patch_start = 1 + int(num_register_tokens)
+        return tokens[:, patch_start:]
+
+    def patch_logits_from_tokens(self, tokens: torch.Tensor) -> torch.Tensor:
+        patch_features = self.extract_patch_features(tokens)
+        if self.patch_projector is not None:
+            patch_features = self.patch_projector(patch_features)
+        return self.head(patch_features).squeeze(-1)
+
+    def forward_patch_logits(self, pixel_values: torch.Tensor) -> torch.Tensor:
+        outputs = self.encoder(pixel_values=pixel_values)
+        return self.patch_logits_from_tokens(outputs.last_hidden_state)
+
     def forward(self, pixel_values: torch.Tensor) -> torch.Tensor:
         outputs = self.encoder(pixel_values=pixel_values)
         tokens = outputs.last_hidden_state
@@ -69,16 +160,9 @@ class DINOClassifier(nn.Module):
             features = tokens[:, 0]
         elif self.feature == "mean_patch":
             # DINOv3 has CLS then register tokens before patch tokens.
-            num_register_tokens = getattr(self.encoder.config, "num_register_tokens", 0)
-            patch_start = 1 + int(num_register_tokens)
-            features = tokens[:, patch_start:].mean(dim=1)
-        elif self.feature in {"patch_topk", "patch_vit_topk"}:
-            num_register_tokens = getattr(self.encoder.config, "num_register_tokens", 0)
-            patch_start = 1 + int(num_register_tokens)
-            patch_features = tokens[:, patch_start:]
-            if self.patch_projector is not None:
-                patch_features = self.patch_projector(patch_features)
-            patch_logits = self.head(patch_features).squeeze(-1)
+            features = self.extract_patch_features(tokens).mean(dim=1)
+        elif self.feature in {"patch_topk", "patch_mlp_topk", "patch_conv_topk", "patch_vit_topk"}:
+            patch_logits = self.patch_logits_from_tokens(tokens)
             k = min(max(int(self.top_k), 1), int(patch_logits.shape[1]))
             return patch_logits.topk(k, dim=1).values.mean(dim=1)
         else:
@@ -93,7 +177,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--model-path", type=Path, default=Path(os.environ.get("MODEL_PATH", "models/dinov3-vitb16-pretrain-lvd1689m")))
     parser.add_argument("--output-dir", type=Path, default=Path(os.environ.get("OUT_DIR", "outputs/dino_visa_a0_linear")))
     parser.add_argument("--head", choices=["linear", "mlp"], default="linear")
-    parser.add_argument("--feature", choices=["cls", "mean_patch", "patch_topk", "patch_vit_topk"], default="cls")
+    parser.add_argument(
+        "--feature",
+        choices=["cls", "mean_patch", "patch_topk", "patch_mlp_topk", "patch_conv_topk", "patch_vit_topk"],
+        default="cls",
+    )
     parser.add_argument("--top-k", type=int, default=int(os.environ.get("TOP_K", "6")))
     parser.add_argument("--patch-projector-depth", type=int, default=int(os.environ.get("PATCH_PROJECTOR_DEPTH", "6")))
     parser.add_argument("--patch-projector-heads", type=int, default=int(os.environ.get("PATCH_PROJECTOR_HEADS", "8")))

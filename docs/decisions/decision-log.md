@@ -69,3 +69,26 @@
 - 以 `EXP-003` 作為目前 image-level component baseline。
 - 從 patch logits 產生 heatmaps，補 VisA pixel-level AUROC / AUPRC / F1max。
 - 若 localization 指標不足，再評估 FoundAD-style projection-distance objective 或其他 anomaly-specific losses。
+
+## DEC-005：VLM Decoder 暫緩，先完成 Visual Projector / Memory-Bank Module
+
+日期：2026-06-24
+
+狀態：已採納
+
+決策：短期不接 VLM decoder，不把 CLIP/SigLIP 作為主線 encoder 對照。研究主線固定 DINOv3，先完成 visual anomaly module：supervised projector comparison、patch-grid / pixel-level localization、normal memory-bank decoder。
+
+理由：
+
+- 目前任務是 VisA / MVTec 類工業瑕疵，主要是局部幾何、紋理與表面缺陷，不是 open-vocabulary semantic anomaly。
+- `EXP-004` 顯示 token-wise MLP projector 已接近 Transformer projector，表示需要先釐清 projector capacity / token interaction，而不是直接增加 VLM 複雜度。
+- `EXP-005` 顯示 naive local Conv projector 在 localization proxy 上失效，代表 decoder/projector 需要更嚴格設計。
+- MVTec official train set 以 normal samples 為主，不適合直接混入目前 VisA supervised head；更合理的是 DINOv3 normal memory-bank / PatchCore-style decoder。
+- 近期 industrial AD 方向仍重視 DINOv3 dense features、memory bank、patch-wise scoring 與 morphology；VLM 應留到 visual module 已可穩定產出 anomaly map 後再作文字輸出。
+
+後續動作：
+
+- 補 MLP vs Transformer projector 的 parameter-matched comparison。
+- 實作 normal-only memory-bank decoder，先跑 VisA / MVTec-AD。
+- 將 patch-grid proxy 升級為 full-resolution pixel metric 與 heatmap overlays。
+- VLM 只作後段 report / reasoning / open-vocabulary extension，不作近期 EXP-004/005 主線。

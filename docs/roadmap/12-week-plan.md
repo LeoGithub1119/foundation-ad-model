@@ -35,8 +35,8 @@ gantt
 | --- | --- | --- | --- |
 | W1 / 2026-W25 | 2026-06-15 至 2026-06-21 | 建立研究紀錄網站與 DINO baseline 工作流骨架 | MkDocs Pages scaffold、公開/內部文件分流、第一個 GPU baseline |
 | W2 / 2026-W26 | 2026-06-22 至 2026-06-28 | 完成 DINOv3 CLS baseline 與 patch component comparison | EXP-001/002/003 overall 與 per-category metrics、component decision |
-| W3 / 2026-W27 | 2026-06-29 至 2026-07-05 | 從 EXP-003 產生 patch-score heatmaps | VisA pixel-level AUROC / AUPRC / F1max、heatmap examples |
-| W4 / 2026-W28 | 2026-07-06 至 2026-07-12 | 比較 supervised ViT projector 與 FoundAD-style objective | image-level + pixel-level component comparison |
+| W3 / 2026-W27 | 2026-06-29 至 2026-07-05 | Projector parameter-matched comparison | MLP vs Transformer depth/width 控制實驗 |
+| W4 / 2026-W28 | 2026-07-06 至 2026-07-12 | DINOv3 normal memory-bank decoder | VisA / MVTec-AD image-level + full-res pixel metric |
 | W5 / 2026-W29 | 2026-07-13 至 2026-07-19 | 補 threshold / failure case 分析 | per-category failure cases、threshold policy、PR/ROC curves |
 | W6 / 2026-W30 | 2026-07-20 至 2026-07-26 | 整理第一版 component baseline report | GitPage 公開摘要與可轉進國科會進度報告的表格 |
 | W7 / 2026-W31 | 2026-07-27 至 2026-08-02 | 根據 pixel-level 結果決定下一個 component | Top-K / projector depth / loss tuning 計畫 |

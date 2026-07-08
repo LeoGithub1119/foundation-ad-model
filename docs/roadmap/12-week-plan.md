@@ -20,13 +20,14 @@ gantt
     section Supervised AD
     VisA supervised loader     :done, 2026-06-22, 3d
     A0 linear head baseline    :done, 2026-06-22, 3d
-    Patch component comparison :active, 2026-06-23, 7d
+    Patch component comparison :done, 2026-06-23, 7d
     可重現性整理               :2026-06-29, 7d
     指標與 threshold 分析      :2026-07-06, 7d
 
     section Component Study
-    Patch heatmap localization :2026-06-29, 7d
-    FoundAD-style objective    :2026-07-06, 14d
+    Patch heatmap localization :done, 2026-06-29, 14d
+    Memory-bank decoder        :done, 2026-07-06, 7d
+    FoundAD-style objective    :2026-07-13, 14d
     Baseline report            :2026-07-20, 7d
     下一階段決策               :2026-07-27, 7d
 ```
@@ -36,7 +37,7 @@ gantt
 | W1 / 2026-W25 | 2026-06-15 至 2026-06-21 | 建立研究紀錄網站與 DINO baseline 工作流骨架 | MkDocs Pages scaffold、公開/內部文件分流、第一個 GPU baseline |
 | W2 / 2026-W26 | 2026-06-22 至 2026-06-28 | 完成 DINOv3 CLS baseline 與 patch component comparison | EXP-001/002/003 overall 與 per-category metrics、component decision |
 | W3 / 2026-W27 | 2026-06-29 至 2026-07-05 | Projector parameter-matched comparison | MLP vs Transformer depth/width 控制實驗 |
-| W4 / 2026-W28 | 2026-07-06 至 2026-07-12 | DINOv3 normal memory-bank decoder | VisA / MVTec-AD image-level + full-res pixel metric |
+| W4 / 2026-W28 | 2026-07-06 至 2026-07-12 | Dense heatmap + DINOv3 normal memory-bank decoder | VisA / MVTec-AD image-level + `224x224` dense heatmap proxy |
 | W5 / 2026-W29 | 2026-07-13 至 2026-07-19 | 補 threshold / failure case 分析 | per-category failure cases、threshold policy、PR/ROC curves |
 | W6 / 2026-W30 | 2026-07-20 至 2026-07-26 | 整理第一版 component baseline report | GitPage 公開摘要與可轉進國科會進度報告的表格 |
 | W7 / 2026-W31 | 2026-07-27 至 2026-08-02 | 根據 pixel-level 結果決定下一個 component | Top-K / projector depth / loss tuning 計畫 |

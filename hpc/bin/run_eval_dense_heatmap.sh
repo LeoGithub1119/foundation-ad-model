@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/common.sh"
+source "$SCRIPT_DIR/activate.sh"
+
+RUN_TAG="${RUN_TAG:-${EXP_NAME:-dino_visa_a0_linear}}"
+OUT_DIR="${OUT_DIR:-$WORK_DIR/outputs/$RUN_TAG}"
+MODEL_PATH="${MODEL_PATH:-$WORK_DIR/models/$(basename "$MODEL_ID")}"
+DATASET_ROOT="${DATASET_ROOT:-$WORK_DIR/datasets/VisA}"
+SPLIT_CSV="${SPLIT_CSV:-split_csv/2cls_highshot.csv}"
+CHECKPOINT="${CHECKPOINT:-$OUT_DIR/best_head.pt}"
+EVAL_SPLIT="${EVAL_SPLIT:-test}"
+
+mkdir -p "$OUT_DIR"
+export PYTHONPATH="$PROJECT_ROOT/src:${PYTHONPATH:-}"
+
+echo "[DENSE_HEATMAP_EVAL] EXP_NAME=${EXP_NAME:-}"
+echo "[DENSE_HEATMAP_EVAL] MODEL_PATH=$MODEL_PATH"
+echo "[DENSE_HEATMAP_EVAL] DATASET_ROOT=$DATASET_ROOT"
+echo "[DENSE_HEATMAP_EVAL] SPLIT_CSV=$SPLIT_CSV"
+echo "[DENSE_HEATMAP_EVAL] CHECKPOINT=$CHECKPOINT"
+echo "[DENSE_HEATMAP_EVAL] OUT_DIR=$OUT_DIR"
+echo "[DENSE_HEATMAP_EVAL] EVAL_SPLIT=$EVAL_SPLIT"
+
+args=(
+  --dataset-root "$DATASET_ROOT"
+  --split-csv "$SPLIT_CSV"
+  --model-path "$MODEL_PATH"
+  --checkpoint "$CHECKPOINT"
+  --output-dir "$OUT_DIR"
+  --split "$EVAL_SPLIT"
+  --batch-size "${BATCH_SIZE:-16}"
+  --num-workers "${NUM_WORKERS:-4}"
+  --eval-size "${HEATMAP_EVAL_SIZE:-224}"
+  --hist-bins "${HIST_BINS:-4096}"
+)
+
+if [ -n "${MAX_EVAL_SAMPLES:-}" ]; then
+  args+=(--max-samples "$MAX_EVAL_SAMPLES")
+fi
+
+if [ -n "${MAX_EVAL_SAMPLES_PER_LABEL:-}" ]; then
+  args+=(--max-samples-per-label "$MAX_EVAL_SAMPLES_PER_LABEL")
+fi
+
+if [ "${AMP:-0}" = "1" ]; then
+  args+=(--amp)
+fi
+
+python -m dino_ad.eval_visa_dense_heatmap "${args[@]}"

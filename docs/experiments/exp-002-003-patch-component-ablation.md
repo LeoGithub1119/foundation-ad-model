@@ -82,4 +82,4 @@ The next controlled comparisons should separate these factors:
 
 ## Next Step
 
-Use `EXP-003` as the current image-level component baseline, but do not present it as a final proof. The follow-up module controls are summarized in [EXP-004+ Projector Module Study](exp-004-projector-module-study.md). The next stage should move from patch-grid proxy metrics toward full-resolution heatmaps and memory-bank decoding.
+Use `EXP-003` as the current image-level component baseline, but do not present it as a final proof. The follow-up module controls are summarized in [EXP-004+ Projector Module Study](exp-004-projector-module-study.md), and the dense heatmap / memory-bank follow-up is summarized in [EXP-007/008/009 Visual Module Follow-up](exp-007-009-visual-module-followup.md).

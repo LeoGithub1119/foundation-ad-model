@@ -21,13 +21,15 @@ nav:
       - 評估指標定義: figures/metrics.md
   - 每週進度:
       - 週報索引: weekly/README.md
-      - 2026-W25: weekly/2026-W25.md
+      - 2026-W28: weekly/2026-W28.md
       - 2026-W26: weekly/2026-W26.md
+      - 2026-W25: weekly/2026-W25.md
   - 實驗紀錄:
       - 實驗總表: experiments/registry.md
       - EXP-001 Image-Level 表格: experiments/exp-001-image-level-table.md
       - EXP-002/003 Patch Component Comparison: experiments/exp-002-003-patch-component-ablation.md
       - EXP-004+ Projector Module Study: experiments/exp-004-projector-module-study.md
+      - EXP-007/008/009 Visual Module Follow-up: experiments/exp-007-009-visual-module-followup.md
   - 技術決策:
       - 決策紀錄: decisions/decision-log.md
   - 工作流程:

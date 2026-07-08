@@ -90,5 +90,28 @@
 
 - 補 MLP vs Transformer projector 的 parameter-matched comparison。
 - 實作 normal-only memory-bank decoder，先跑 VisA / MVTec-AD。
-- 將 patch-grid proxy 升級為 full-resolution pixel metric 與 heatmap overlays。
+- 先將 patch-grid proxy 升級為 dense heatmap proxy；後續再補原始解析度 pixel metric 與 heatmap overlays。
 - VLM 只作後段 report / reasoning / open-vocabulary extension，不作近期 EXP-004/005 主線。
+
+## DEC-006：保留 6-layer Transformer 作為 Supervised Baseline，Memory-Bank 作為 Localization Branch
+
+日期：2026-07-08
+
+狀態：已採納
+
+決策：短期以 `EXP-003` 6-layer Transformer projector 作為 supervised VisA baseline；同時保留 `EXP-009` normal memory-bank decoder 作為 MVTec / localization branch。暫不把 depth2 Transformer 取代 6-layer baseline，也不因 memory-bank dense 分數較好而直接放棄 supervised projector。
+
+理由：
+
+- `EXP-008a` depth9 MLP 沒有改善，表示增益不是單純由 MLP depth / parameter count 解釋。
+- `EXP-008b` depth2 Transformer image AUROC 最高，但 image AUPRC/F1max 略低於 6-layer Transformer，且 dense F1max 明顯較弱。
+- `EXP-009a` VisA memory-bank image-level 弱，但 dense heatmap proxy 強，代表它較適合發展成 localization module，而不是直接作 image classifier。
+- `EXP-009b` MVTec normal-only result 可作為和 PatchCore-style / training-free industrial AD 方法對齊的 baseline。
+- 博士班簡報 P13-P14 的 VisA supervised result 仍明顯高於目前 DINOv3 visual-module baseline，不能宣稱已對齊其 `99` 分結果。
+
+後續動作：
+
+- 補 per-category dense metrics 與 heatmap overlays。
+- 將 memory-bank 改成 class-specific / coreset / neighborhood-restricted scoring。
+- 研究 memory-bank image score aggregation 與 category calibration。
+- 等 visual module 能穩定產生 anomaly map 後，再評估 VLM decoder。

@@ -17,7 +17,9 @@
 | EXP-004 | 已完成 | Token-wise MLP projector control | VisA `2cls_highshot.csv` | DINOv3 frozen + patch MLP projector + Top-K=6 | image-level + patch-grid metrics | `WORK_DIR/outputs/dino_visa_a3_patch_mlp_topk` | 大部分提升可由 token-wise nonlinear projector 解釋：AUPRC `0.8478`，F1max `0.7753` |
 | EXP-005 | 已完成 | Local Conv projector control | VisA `2cls_highshot.csv` | DINOv3 frozen + patch Conv projector + Top-K=6 | image-level + patch-grid metrics | `WORK_DIR/outputs/dino_visa_a4_patch_conv_topk` | image-level 較弱且 patch-grid localization 幾乎失效；暫不作主線 |
 | EXP-006 | 已完成 | Transformer projector Top-K sweep | VisA `2cls_highshot.csv` | DINOv3 frozen + Transformer projector + Top-K `{1,6,12}` | image-level metrics | `WORK_DIR/outputs/dino_visa_a5_patch_vit_topk_k1`, `WORK_DIR/outputs/dino_visa_a6_patch_vit_topk_k12` | `K=6` 在 1/6/12 中 image AUPRC/F1max 最好，但仍不是完整 K sweep |
-| EXP-007 | 規劃中 | DINOv3 normal memory-bank decoder | VisA + MVTec-AD | DINOv3 dense features + normal memory bank / PatchCore-style scoring | image-level + full-res pixel metrics | TBD | MVTec official protocol 應走 normal-only / training-free 路線，不混入 supervised test anomalies |
+| EXP-007 | 已完成 | Dense heatmap proxy for supervised projectors | VisA `2cls_highshot.csv` | DINOv3 frozen + patch logits upsampled to `224x224` | image-level + dense heatmap proxy | `WORK_DIR/outputs/dino_visa_a2_patch_vit_topk_lr1e4`, `WORK_DIR/outputs/dino_visa_a3_patch_mlp_topk` | 6-layer Transformer dense F1max `24.12`，depth2 MLP dense F1max `23.70` |
+| EXP-008 | 已完成 | Projector capacity / token interaction control | VisA `2cls_highshot.csv` | DINOv3 frozen + depth9 MLP 或 depth2 Transformer + Top-K=6 | image-level + dense heatmap proxy | `WORK_DIR/outputs/dino_visa_a7_patch_mlp_topk_depth9`, `WORK_DIR/outputs/dino_visa_a8_patch_vit_topk_depth2` | depth9 MLP 沒有提升；depth2 Transformer image AUROC 高但 dense F1max 弱，6-layer Transformer 仍最平衡 |
+| EXP-009 | 已完成 | DINOv3 normal memory-bank decoder | VisA + MVTec-AD | DINOv3 dense features + 20k normal patch memory | image-level + dense heatmap proxy | `WORK_DIR/outputs/dino_visa_a9_memory_bank`, `WORK_DIR/outputs/dino_mvtec_a1_memory_bank` | VisA image-level 弱但 dense strong；MVTec normal-only baseline 可用 |
 
 ## 標記完成前必須記錄
 
@@ -65,6 +67,16 @@ Tiny CPU training-loop smoke 使用 2 張 normal 與 2 張 anomaly 做 train/tes
 - `244068`：EXP-005 patch-grid localization proxy 完成，耗時 `00:27:35`。
 - `244103`：EXP-006 `K=1` image-level per-category evaluation 完成，耗時 `00:00:38`。
 - `244104`：EXP-006 `K=12` image-level per-category evaluation 完成，耗時 `00:00:38`。
+- `257137`：EXP-008b depth2 Transformer projector 訓練完成，耗時 `00:06:23`。
+- `257138`：EXP-008a depth9 MLP projector 訓練完成，耗時 `00:06:14`。
+- `257141`：EXP-009a VisA normal memory-bank evaluation 完成，耗時 `00:02:17`。
+- `257142`：EXP-009b MVTec-AD normal memory-bank evaluation 完成，耗時 `00:01:55`。
+- `257146`：EXP-008b image-level evaluation 完成，耗時 `00:00:38`。
+- `257147`：EXP-008a image-level evaluation 完成，耗時 `00:00:38`。
+- `257148`：EXP-008b dense heatmap evaluation 完成，耗時 `00:01:46`。
+- `257149`：EXP-008a dense heatmap evaluation 完成，耗時 `00:01:47`。
+- `257151`：EXP-003 dense heatmap evaluation 修正版完成，耗時 `00:01:45`。
+- `257152`：EXP-004 dense heatmap evaluation 修正版完成，耗時 `00:01:42`。
 
 ## EXP-001 結果摘要
 
@@ -119,3 +131,23 @@ EXP-002/003 固定 DINOv3 encoder 與 VisA split，比較 patch-token Top-K cont
 | EXP-005 | Local Conv projector | 6 | 94.50 | 73.69 | 67.29 | 53.12 | 0.17 | 0.36 | 暫不作主線 |
 | EXP-006a | Transformer projector | 1 | 95.27 | 81.34 | 75.26 | TBD | TBD | TBD | K 太小，召回較不穩 |
 | EXP-006b | Transformer projector | 12 | 96.03 | 84.70 | 76.07 | TBD | TBD | TBD | K=12 接近但低於 K=6 |
+
+## EXP-007 / EXP-008 / EXP-009 Visual Module Follow-up
+
+完整整理於 [EXP-007/008/009 Visual Module Follow-up](exp-007-009-visual-module-followup.md)。
+
+### Supervised projector + dense heatmap
+
+| ID | Module | Image AUROC | Image AUPRC | Image F1max | Dense AUROC | Dense AUPRC | Dense F1max | 結論 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| EXP-003 | 6-layer Transformer projector | 96.44 | 87.41 | 80.78 | 92.03 | 15.01 | 24.12 | 目前最平衡 supervised projector |
+| EXP-004 | depth2 token-wise MLP | 95.20 | 84.78 | 77.53 | 97.07 | 14.32 | 23.70 | MLP 已解釋多數 image-level gain |
+| EXP-008a | depth9 token-wise MLP | 94.63 | 83.21 | 76.77 | 96.14 | 14.35 | 22.80 | 加深 MLP 沒有改善 |
+| EXP-008b | depth2 Transformer projector | 96.97 | 86.99 | 79.70 | 97.14 | 9.70 | 18.80 | image AUROC 高，但 localization proxy 變弱 |
+
+### Normal memory-bank decoder
+
+| ID | Dataset | Image AUROC | Image AUPRC | Image F1max | Dense AUROC | Dense AUPRC | Dense F1max | 結論 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| EXP-009a | VisA | 79.66 | 44.47 | 41.28 | 95.49 | 22.36 | 35.19 | image-level 不適合直接取代 supervised projector，但 localization 訊號強 |
+| EXP-009b | MVTec-AD | 85.86 | 94.74 | 86.98 | 92.52 | 40.44 | 39.49 | normal-only / MVTec branch 的可用 baseline |

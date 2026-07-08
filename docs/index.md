@@ -48,6 +48,7 @@ flowchart LR
 
 - [12 週規劃](roadmap/12-week-plan.md)
 - [每週進度](weekly/README.md)
+- [實驗脈絡與架構總覽](experiments/experiment-lineage.md)
 - [實驗總表](experiments/registry.md)
 - [EXP-001 Image-Level 表格](experiments/exp-001-image-level-table.md)
 - [EXP-002/003 Patch Component Comparison](experiments/exp-002-003-patch-component-ablation.md)
